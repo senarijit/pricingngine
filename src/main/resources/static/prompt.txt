@@ -1,0 +1,51 @@
+Act as an expert Java Backend Engineer. I need to build a modular Spring Boot 3.x project that executes a sequential workflow mirroring three distinct agent tasks.
+
+We already have the DDL/entities for `customer_master` and `vehicle_master`. We also have configured Springdoc OpenAPI (Swagger).
+
+Please generate the complete project architecture, services, and REST controller endpoints to handle the following sequential multi-step workflow. Adhere to strict encapsulation, clean separation of concerns, enterprise security/PII guidelines, and clear error hiding.
+
+### Step 1: Customer Data Retrieval Service
+Implement a service layer to satisfy the 'customer_data_retrieval_task':
+- Input: String phoneNumber. Validate that it matches a 10-digit format (`^[0-9]{10}$`).
+- Query: Retrieve the record from `CustomerMasterRepository`.
+- Output Mapping: Do NOT return the full entity. Map it to a secure, minimized Data Transfer Object (DTO) named `CustomerSummaryDTO` containing only: `phoneNumber`, `firstName`, `lastName`, `email`, `creditTier` and 'zipCode'.
+- Error Handling: If missing, throw a custom `CustomerNotFoundException`. Catch it globally to return a clean, user-friendly JSON message. Never leak raw SQL/Hibernate exceptions.
+
+### Step 2: Vehicle Inventory Query Service
+Implement a service layer to satisfy the 'vehicle_product_inventory_task':
+- Input: A search filter DTO `VehicleSearchRequest` containing optional filters: `make`, `model`, `modelYear`, `vehicleType`, and a max `budget`.
+- Query: Query the `VehicleMasterRepository`. Use a limit of up to 5 records matching the search criteria.
+- Output Mapping: Map results to a collection of `VehicleSummaryDTO` containing only: `inventoryId`, `make`, `model`, `modelYear`, `msrp`, and `vehicleType`.
+- Rules: Hide database internal structures and primary/foreign IDs except for `inventoryId`.
+
+### Step 3: Pricing Calculator Service
+Implement a business logic service layer to satisfy the 'pricing_calculator_task':
+- Input: A DTO `PricingCalculationRequest` containing: `dealerId`, `inventoryId`, `financingOption` (ENUM: RETAIL, LEASE), `term` (int), `downPayment` (double), and `tradeIn` (double).
+- Mock Rate Retrieval: Since we don't have the DynamoDB `rateMaster` table wired yet, create a mock component or helper method `MockRateService` that returns a hardcoded mock interest rate (e.g., `5.5` for Tier 1, `7.2` for Tier 2) using the customer's `creditTier` and `dealerId`.
+- Calculation Engine:
+  1. Fetch the vehicle's `msrp` from the database using the `inventoryId`. Convert the String `msrp` safely to a numeric value.
+  2. Compute `amountFinanced = msrp - (downPayment + tradeIn)`.
+  3. Compute monthly interest `rate = (retrievedRate / 100) / 12`.
+  4. If financingOption is RETAIL:
+     - `monthlyPay = (amountFinanced * rate) / (1 - Math.pow(1 + rate, -term))`
+     - `totalPay = monthlyPay * term`
+  5. If financingOption is LEASE:
+     - `double balloonPay = msrp * 0.35;`
+     - Implement the exact lease equation from the spec: `monthlyPay = (Math.pow(1 + rate, term - 1)) * (amountFinanced + (amountFinanced * rate)) - Math.round(balloonPay) * (rate / (Math.pow(1 + rate, term - 1) - 1)) / (1 + rate);`
+     - `totalPay = monthlyPay * term`
+- Output: Return a `FinancingSummaryDTO` containing: `financingOption`, `monthlyPay`, `totalPay`, `rate`, and a map of `keyAssumptions` (downPayment, tradeIn, term, msrp).
+
+### Step 4: The Orchestration Workflow Controller
+Create a unified `@RestController` called `WorkflowController` exposed under `/api/v1/workflow` with Swagger (`@Tag`, `@Operation`) documentation enabled.
+
+Provide an end-to-end sequential endpoint:
+- `POST /api/v1/workflow/execute`
+- Request Body: Accepts a master JSON containing a `phoneNumber`, the `VehicleSearchRequest` payload, and the specific `financingOption` inputs (term, downpayment, trade-in).
+- Process Flow:
+  1. Calls Step 1 to verify the customer and pull their credit tier.
+  2. Calls Step 2 to search and verify available matching inventory.
+  3. Automatically picks the top/first matching vehicle from the results.
+  4. Calls Step 3 to execute the precise calculation using the retrieved customer tier and vehicle MSRP.
+- Response: Returns a clean combined JSON payload showing the Customer Summary, the Selected Vehicle Summary, and the final Financing Summary.
+
+Please generate all DTOs, custom exceptions, service implementations, and the orchestrating controller. Ensure clean code structures and use standard Java 17 syntax.
