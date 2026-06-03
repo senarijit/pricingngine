@@ -8,5 +8,5 @@ import java.util.List;
 @Repository
 public interface VehicleMasterRepository extends JpaRepository<VehicleMaster, String> {
 
-    // Automatically generated finder method using the foreign key field
+    List<VehicleMaster> findByDealerIdIn(List<String> dealerIds);
 }

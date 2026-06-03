@@ -77,3 +77,22 @@ CREATE TABLE public.rate_master (
 CREATE INDEX idx_rate_master_dealer ON public.rate_master USING btree (dealer_id);
 CREATE INDEX idx_rate_master_rate_lookup ON public.rate_master USING btree (dealer_id, make, model, year, term_months, finance_type, credit_tier);
 CREATE INDEX idx_rate_master_vehicle ON public.rate_master USING btree (make, model, year, "trim");
+
+CREATE TABLE public.standard_rates (
+	standard_rate_id serial4 NOT NULL,
+	state varchar(8000) NULL,
+	dealer_id varchar(8000) NOT NULL,
+	"type" varchar(8000) NULL,
+	make varchar(8000) NULL,
+	model varchar(8000) NULL,
+	series varchar(8000) NULL,
+	model_year varchar(8000) NULL,
+	term int4 NULL,
+	tier varchar(8000) NULL,
+	rate varchar(8000) NULL,
+	subvented bool NULL,
+	CONSTRAINT chk_rate_type CHECK (((type)::text = ANY ((ARRAY['Retail'::character varying, 'Lease'::character varying])::text[]))),
+	CONSTRAINT standard_rates_pkey PRIMARY KEY (standard_rate_id),
+	CONSTRAINT fk_rates_dealer FOREIGN KEY (dealer_id) REFERENCES public.dealer_master(dealer_id)
+);
+CREATE INDEX idx_standard_rates_dealer ON public.standard_rates USING btree (dealer_id);
