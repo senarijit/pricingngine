@@ -1,0 +1,37 @@
+Act as an expert Java Backend Engineer, I need to build a modular Spring Boot 3.x project that executes a sequential tasks to present vehicle retail estimates.
+
+There are four tables as mentioned in tables.sql file.
+- customer_master
+- dealer_master
+- vehicle_master
+- rate_master
+
+Create a new API "/api/v1/vehicles/estimates" in AutoFinanceController which will -
+Input: phoneNumber, zipCode
+Step 1: Serach customer_master table with phoneNumber to get creditTier. Return 404 if no record found.
+Step 2: Search dealer_master table with zipCode and get list of all matching dealerCodes. Return 404 if no record found.
+Step 3: Search vehicle_master table with all matching dealerCodes from Step 2. Return 404 if no record found.
+Step 4: Search rate_master table which will fetch matching records with creditTier from Step 1, dealerCodes from Step 2, vehicles from Step 3 and financeTye=RETAIL.
+Step 5: Once rates are retrieved, it will calculate monthly payments of all vehicles from Step 3 and rates retrieved in Step 4. The monthly payment calculation formula -
+     - `rate = (rateFromDb / 100) / 12`
+     - `monthlyPay = (msrpFromDb * rate) / (1 - Math.pow(1 + rate, - termFromDb))`
+     - `totalPay = monthlyPay * term`
+Step 6: The will be multiple monthly payments for each vehicle for different terms. Retun the top 500 results by monthlyPay descending. The response JSON will have following fields -
+     - vin
+     - vehicleType
+     - make
+     - model
+     - modelYear
+     - trim
+     - msrp
+     - image
+     - monthlyPay
+     - totalPay
+     - rate
+
+Please generate the complete project following below guidelines.
+- The API should be fast performing capable of handling large data sets (million of records)
+- Use parallel processing wherever applicable
+- Use modern frameworks and Java 17 features to imporove performance and code quality
+- Input validation on phoneNumber and zipCode
+- API error handling
