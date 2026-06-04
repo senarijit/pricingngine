@@ -11,6 +11,6 @@ import java.util.List;
 @Repository
 public interface DealerMasterRepository extends JpaRepository<DealerMaster, String> {
     @Query("select d.dealerId from DealerMaster d where d.zipCode = :zipCode")
-    List<String> findDealerIdByZipCode(@Param("zipCode") String zipCode);
+    List<String> findTop10DealerIdByZipCode(@Param("zipCode") String zipCode);
 }
 

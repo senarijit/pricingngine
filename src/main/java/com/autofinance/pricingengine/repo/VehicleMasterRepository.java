@@ -8,5 +8,5 @@ import java.util.List;
 @Repository
 public interface VehicleMasterRepository extends JpaRepository<VehicleMaster, String> {
 
-    List<VehicleMaster> findByDealerIdIn(List<String> dealerIds);
+    List<VehicleMaster> findTop100ByDealerIdIn(List<String> dealerIds);
 }

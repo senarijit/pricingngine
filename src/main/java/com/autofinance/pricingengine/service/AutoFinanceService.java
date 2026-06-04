@@ -65,12 +65,12 @@ public class AutoFinanceService {
             throw new ResourceNotFoundException("Customer credit tier not available", "phoneNumber", normalizedPhone);
         }
 
-        List<String> dealerIds = dealerMasterRepository.findDealerIdByZipCode(normalizedZip);
+        List<String> dealerIds = dealerMasterRepository.findTop10DealerIdByZipCode(normalizedZip);
         if (dealerIds.isEmpty()) {
             throw new ResourceNotFoundException("No dealers found for zipCode", "zipCode", normalizedZip);
         }
 
-        List<VehicleMaster> vehicles = vehicleMasterRepository.findByDealerIdIn(dealerIds);
+        List<VehicleMaster> vehicles = vehicleMasterRepository.findTop100ByDealerIdIn(dealerIds);
         if (vehicles.isEmpty()) {
             throw new ResourceNotFoundException("No vehicles found for dealer zipCode", "zipCode", normalizedZip);
         }
@@ -79,7 +79,7 @@ public class AutoFinanceService {
                 .filter(v -> v.getMake() != null && v.getModel() != null && v.getModelYear() != null)
                 .collect(Collectors.groupingByConcurrent(this::buildVehicleLookupKey));
 
-        List<RateMaster> rates = rateMasterRepository.findRetailRatesForVehicles(dealerIds, creditTier);
+        List<RateMaster> rates = rateMasterRepository.findRetailRatesForVehicles(vehicles, creditTier);
         if (rates.isEmpty()) {
             throw new ResourceNotFoundException("No retail rates found for the requested criteria", "creditTier", creditTier);
         }
